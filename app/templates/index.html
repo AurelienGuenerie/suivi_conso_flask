@@ -3,11 +3,133 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Hello World Flask</title>
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Inclusion de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body>
-    <h1>{{ message }}</h1>
+<body class="bg-light">
+    <div class="container mt-5 mb-5" style="max-width: 900px;">
+        <h1 class="mb-4 text-center">Suivi de Consommation</h1>
+
+        <!-- Section Graphique -->
+        {% if historique %}
+        <div class="card p-4 shadow-sm mb-5">
+            <h3 class="mb-3">Évolution</h3>
+            <!-- On injecte le JSON dans un attribut data- -->
+            <div style="position: relative; height:300px; width:100%" id="chart-container"
+                data-historique='{{ historique | tojson }}'>
+                <canvas id="consoChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Formulaire -->
+        <div class="card p-4 shadow-sm mb-5">
+            <h3 class="mb-3">Ajouter un relevé</h3>
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="date" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date" name="date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="plein" class="form-label">Volume (Litres)</label>
+                    <input type="number" step="0.01" class="form-control" id="plein" name="plein" min="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="compteur" class="form-label">Kilométrage (km)</label>
+                    <input type="number" step="0.01" class="form-control" id="compteur" name="compteur" min="0.01"
+                        required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Enregistrer</button>
+            </form>
+        </div>
+
+        <!-- Tableau d'historique -->
+        <div class="card p-4 shadow-sm">
+            <h3 class="mb-3">Historique</h3>
+            {% if historique %}
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Volume (L)</th>
+                            <th>Kilométrage (km)</th>
+                            <th>Consommation</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for date, infos in historique.items() %}
+                        <tr>
+                            <td>{{ date }}</td>
+                            <td>{{ infos.plein }}</td>
+                            <td>{{ infos.compteur }}</td>
+                            <td>{{ infos.consommation }}</td>
+                            <td class="text-end">
+                                <form action="{{ url_for('main.delete', date=date) }}" method="POST"
+                                    style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Voulez-vous vraiment supprimer cette entrée ?');">Supprimer</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">Aucun enregistrement pour le moment.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Script de génération du graphique avec Chart.js -->
+    {% if historique %}
+    <script>
+        // Récupération sécurisée depuis l'attribut HTML (évite les erreurs VS Code)
+        const container = document.getElementById('chart-container');
+        const historiqueData = JSON.parse(container.dataset.historique);
+
+        // Extraction des dates et de la consommation
+        const dates = Object.keys(historiqueData);
+        const consommations = dates.map(date => historiqueData[date].consommation);
+
+        const ctx = document.getElementById('consoChart').getContext('2d');
+        const consoChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Consommation',
+                        data: consommations,
+                        borderColor: 'rgb(220, 53, 69)',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Consommation' }
+                    }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+
+    <script>
+        document.getElementById('date').valueAsDate = new Date();
+    </script>
 </body>
 
 </html>
