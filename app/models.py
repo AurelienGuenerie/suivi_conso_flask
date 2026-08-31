@@ -21,7 +21,7 @@ def calculer_conso(plein: float, compteur: float):
     return conso
 
 
-def ajouter_ligne_dico(date, plein, compteur, conso):
+def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: float, conso: float):
     # S'assurer que le dossier data existe
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     
@@ -33,9 +33,13 @@ def ajouter_ligne_dico(date, plein, compteur, conso):
                 suivi = json.load(file)
         except json.JSONDecodeError:
             suivi = {}
-
-    # Ajouter ou mettre à jour l'entrée
-    suivi[date] = {
+            
+     # 1. S'assurer que le dictionnaire pour ce véhicule existe
+    if vehicule not in suivi:
+        suivi[vehicule] = {}
+            
+    # 2. Ajouter ou mettre à jour l'entrée pour ce véhicule spécifique
+    suivi[vehicule][date] = {
         'plein': plein,
         'compteur': compteur,
         'consommation': conso
@@ -45,20 +49,33 @@ def ajouter_ligne_dico(date, plein, compteur, conso):
     with open(DB_PATH, 'w', encoding='utf-8') as file:
         json.dump(suivi, file, indent=4, ensure_ascii=False)
     
-    print(f"Nouvelle date créée : {date}")
-    
+    print(f"Nouvelle date créée pour {vehicule} : {date}")  
+      
 def recuperer_donnees():
     if not os.path.exists(DB_PATH):
-        return {}
+            return {}
+            
     try:
         with open(DB_PATH, 'r', encoding='utf-8') as file:
-            suivi = json.load(file)
-            # Tri par date (les clés du dictionnaire)
-            return dict(sorted(suivi.items()))
+            data = json.load(file)
+            if not data:
+                return {}
+            
+            # Vérifier si c'est l'ancienne structure (les valeurs contiennent directement 'plein')
+            premiere_cle = next(iter(data))
+            if isinstance(data[premiere_cle], dict) and "plein" in data[premiere_cle]:
+                # Migration automatique vers la nouvelle structure multi-véhicules
+                data = {"Restauration": data}
+                
+                # Sauvegarder tout de suite la structure mise à jour dans le fichier
+                with open(DB_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=4, ensure_ascii=False)
+                    
+            return data
     except json.JSONDecodeError:
         return {}
     
-def supprimer_ligne_dico(date):
+def supprimer_ligne_dico(vehicule: str, date: str):
     if not os.path.exists(DB_PATH):
         return
     try:
@@ -67,8 +84,14 @@ def supprimer_ligne_dico(date):
     except json.JSONDecodeError:
         suivi = {}
 
-    if date in suivi:
-        del suivi[date]
-        with open(DB_PATH, 'w', encoding='utf-8') as file:
-            json.dump(suivi, file, indent=4, ensure_ascii=False)
-        print(f"Entrée supprimée : {date}")
+    if vehicule in suivi:
+        if date in suivi[vehicule]:
+            del suivi[vehicule][date]
+            
+            # Optionnel : supprimer la clé du véhicule si elle est vide
+            if not suivi[vehicule]:
+                del suivi[vehicule]
+            
+            with open(DB_PATH, 'w', encoding='utf-8') as file:
+                json.dump(suivi, file, indent=4, ensure_ascii=False)
+            print(f"Entrée supprimée : {date}")

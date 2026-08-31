@@ -10,4 +10,4 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - TZ=Europe/Paris
-    user: "1000:1000"  # Force le conteneur à tourner sous l'UID 1000 et GID 1000
+    user: "1000:100"  # Force le conteneur à tourner sous l'UID 1000 et GID 100

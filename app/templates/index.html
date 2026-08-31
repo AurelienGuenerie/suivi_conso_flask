@@ -5,19 +5,77 @@
     <meta charset="UTF-8">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <!-- Inclusion de Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="bg-light">
+
     <div class="container mt-5 mb-5" style="max-width: 900px;">
         <h1 class="mb-4 text-center">Suivi de Consommation</h1>
+
+        <!-- SÉLECTEUR DE VÉHICULE -->
+        <div class="card p-3 shadow-sm mb-4 bg-white">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <label for="vehicleSelect" class="col-form-label fw-bold">Véhicule :</label>
+                </div>
+                <div class="col">
+                    <select id="vehicleSelect" class="form-select"
+                        onchange="window.location.href = '/' + encodeURIComponent(this.value);">
+                        {% for v in list_vehicles %}
+                        <option value="{{ v }}" {% if v==current_vehicle %}selected{% endif %}>{{ v }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#addVehicleModal">
+                        + Ajouter
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <form action="{{ url_for('main.delete_vehicle', vehicle=current_vehicle) }}" method="POST"
+                        style="display:inline;">
+                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                            onclick="return confirm('Voulez-vous vraiment supprimer ce véhicule et tout son historique ?');">
+                            Supprimer le véhicule
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODALE D'AJOUT DE VÉHICULE -->
+        <div class="modal fade" id="addVehicleModal" tabindex="-1" aria-labelledby="addVehicleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ url_for('main.add_vehicle') }}" method="POST">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addVehicleModalLabel">Ajouter un nouveau véhicule</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="new_vehicle_name" class="form-label">Nom du véhicule</label>
+                                <input type="text" class="form-control" id="new_vehicle_name" name="new_vehicle_name"
+                                    placeholder="Ex: Berline, Moto..." required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-primary">Créer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
         <!-- Section Graphique -->
         {% if historique %}
         <div class="card p-4 shadow-sm mb-5">
-            <h3 class="mb-3">Évolution</h3>
-            <!-- On injecte le JSON dans un attribut data- -->
+            <h3 class="mb-3">Évolution ({{ current_vehicle }})</h3>
             <div style="position: relative; height:300px; width:100%" id="chart-container"
                 data-historique='{{ historique | tojson }}'>
                 <canvas id="consoChart"></canvas>
@@ -29,6 +87,9 @@
         <div class="card p-4 shadow-sm mb-5">
             <h3 class="mb-3">Ajouter un relevé</h3>
             <form method="POST">
+                <!-- Transmission du véhicule actif -->
+                <input type="hidden" name="vehicle" value="{{ current_vehicle }}">
+
                 <div class="mb-3">
                     <label for="date" class="form-label">Date</label>
                     <input type="date" class="form-control" id="date" name="date" required>
@@ -42,13 +103,13 @@
                     <input type="number" step="0.01" class="form-control" id="compteur" name="compteur" min="0.01"
                         required>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Enregistrer</button>
+                <button type="submit" class="btn btn-primary w-100">Enregistrer pour {{ current_vehicle }}</button>
             </form>
         </div>
 
         <!-- Tableau d'historique -->
         <div class="card p-4 shadow-sm">
-            <h3 class="mb-3">Historique</h3>
+            <h3 class="mb-3">Historique - {{ current_vehicle }}</h3>
             {% if historique %}
             <div class="table-responsive">
                 <table class="table table-striped align-middle">
@@ -64,7 +125,6 @@
                     <tbody>
                         {% set ns = namespace(total_plein=0, total_compteur=0, total_conso=0, count_conso=0) %}
                         {% for date, infos in historique.items() %}
-                        {# --- Cumul des valeurs pour le footer --- #}
                         {% set ns.total_plein = ns.total_plein + (infos.plein | float) %}
                         {% set ns.total_compteur = ns.total_compteur + (infos.compteur | float) %}
 
@@ -79,8 +139,8 @@
                             <td>{{ infos.compteur }}</td>
                             <td>{{ infos.consommation }}</td>
                             <td class="text-end">
-                                <form action="{{ url_for('main.delete', date=date) }}" method="POST"
-                                    style="display:inline;">
+                                <form action="{{ url_for('main.delete', vehicle=current_vehicle, date=date) }}"
+                                    method="POST" style="display:inline;">
                                     <button type="submit" class="btn btn-sm btn-outline-danger"
                                         onclick="return confirm('Voulez-vous vraiment supprimer cette entrée ?');">Supprimer</button>
                                 </form>
@@ -114,11 +174,9 @@
     <!-- Script de génération du graphique avec Chart.js -->
     {% if historique %}
     <script>
-        // Récupération sécurisée depuis l'attribut HTML (évite les erreurs VS Code)
         const container = document.getElementById('chart-container');
         const historiqueData = JSON.parse(container.dataset.historique);
 
-        // Extraction des dates et de la consommation
         const dates = Object.keys(historiqueData);
         const consommations = dates.map(date => historiqueData[date].consommation);
 
@@ -155,6 +213,9 @@
     <script>
         document.getElementById('date').valueAsDate = new Date();
     </script>
+
+    <!-- Inclusion du JS de Bootstrap (nécessaire pour les modales) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
