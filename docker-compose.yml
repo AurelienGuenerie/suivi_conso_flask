@@ -9,6 +9,5 @@ services:
       - ./data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
-      - PUID=1000
-      - PGID=100
       - TZ=Europe/Paris
+    user: "1000:1000"  # Force le conteneur à tourner sous l'UID 1000 et GID 1000
