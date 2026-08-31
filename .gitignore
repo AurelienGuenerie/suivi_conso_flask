@@ -1,0 +1,8 @@
+# Données locales / persistantes
+data/*
+!data/.gitkeep
+
+# Caches Python et fichiers compilés
+__pycache__/
+*.py[cod]
+*$py.class
