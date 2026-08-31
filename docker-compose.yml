@@ -4,7 +4,7 @@ services:
     container_name: conso
     restart: unless-stopped
     ports:
-      - "5011:5011"
+      - 127.0.0.1:5011:5011 # <--- Seul SWAG (qui est sur le host) pourra le voir
     volumes:
       - ./data:/app/data
     environment:
