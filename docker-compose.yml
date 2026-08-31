@@ -7,3 +7,5 @@ services:
       - "5011:5011"
     volumes:
       - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
