@@ -9,3 +9,6 @@ services:
       - ./data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
+      - PUID=1000
+      - PGID=100
+      - TZ=Europe/Paris
