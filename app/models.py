@@ -21,7 +21,7 @@ def calculer_conso(plein: float, compteur: float):
     return conso
 
 
-def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: float, conso: float):
+def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: float, prix: float | None, conso: float):
     # S'assurer que le dossier data existe
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     
@@ -42,7 +42,8 @@ def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: 
     suivi[vehicule][date] = {
         'plein': plein,
         'compteur': compteur,
-        'consommation': conso
+        'consommation': conso,
+        'prix': prix
     }
 
     # Sauvegarder dans le fichier

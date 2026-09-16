@@ -29,11 +29,14 @@ def index(vehicle):
         date = request.form.get('date')
         plein = float(request.form.get('plein', 0))
         compteur = float(request.form.get('compteur', 0))
+        #Champ peut etre facultatif :
+        prix_str = request.form.get('prix')
+        prix = float(prix_str) if prix_str else None
         
         conso = calculer_conso(plein, compteur)
 
         # Enregistrement en précisant le véhicule dans vos models
-        ajouter_ligne_dico(active_vehicle, date, plein, compteur, conso)
+        ajouter_ligne_dico(active_vehicle, date, plein, compteur, prix, conso)
         
         return redirect(url_for('main.index', vehicle=active_vehicle))
 

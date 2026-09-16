@@ -103,6 +103,10 @@
                     <input type="number" step="0.01" class="form-control" id="compteur" name="compteur" min="0.01"
                         required>
                 </div>
+                <div class="mb-3">
+                    <label for="prix" class="form-label">Prix (L/100)</label>
+                    <input type="number" step="0.001" class="form-control" id="prix" name="prix" min="0.001">
+                </div>
                 <button type="submit" class="btn btn-primary w-100">Enregistrer pour {{ current_vehicle }}</button>
             </form>
         </div>
@@ -119,11 +123,13 @@
                             <th>Volume (L)</th>
                             <th>Kilométrage (km)</th>
                             <th>Consommation</th>
+                            <th>Prix (L/100)</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% set ns = namespace(total_plein=0, total_compteur=0, total_conso=0, count_conso=0) %}
+                        {% set ns = namespace(total_plein=0, total_compteur=0, total_conso=0, count_conso=0,
+                        total_prix=0, count_prix=0) %}
                         {% for date, infos in historique.items() %}
                         {% set ns.total_plein = ns.total_plein + (infos.plein | float) %}
                         {% set ns.total_compteur = ns.total_compteur + (infos.compteur | float) %}
@@ -133,11 +139,18 @@
                         {% set ns.count_conso = ns.count_conso + 1 %}
                         {% endif %}
 
+                        {% if infos.prix %}
+                        {% set ns.total_prix = ns.total_prix + (infos.prix | float) %}
+                        {% set ns.count_prix = ns.count_prix + 1 %}
+                        {% endif %}
+
                         <tr>
                             <td>{{ date }}</td>
                             <td>{{ infos.plein }}</td>
                             <td>{{ infos.compteur }}</td>
                             <td>{{ infos.consommation }}</td>
+                            <!-- n'affiche rien si l'utilisateur n'a rien rentré -->
+                            <td>{% if infos.prix %}{{ infos.prix }} €{% endif %}</td>
                             <td class="text-end">
                                 <form action="{{ url_for('main.delete', vehicle=current_vehicle, date=date) }}"
                                     method="POST" style="display:inline;">
@@ -156,6 +169,13 @@
                             <td>
                                 {% if ns.count_conso > 0 %}
                                 {{ "%.2f"|format(ns.total_conso / ns.count_conso) }} L/100
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ns.count_prix > 0 %}
+                                {{ "%.3f"|format(ns.total_prix / ns.count_prix) }} €
                                 {% else %}
                                 -
                                 {% endif %}
@@ -180,6 +200,9 @@
         const dates = Object.keys(historiqueData);
         const consommations = dates.map(date => historiqueData[date].consommation);
 
+        // Extraction des prix (on remplace les valeurs vides ou manquantes par null pour ne pas casser la ligne)
+        const prix = dates.map(date => historiqueData[date].prix ? parseFloat(historiqueData[date].prix) : null);
+
         const ctx = document.getElementById('consoChart').getContext('2d');
         const consoChart = new Chart(ctx, {
             type: 'line',
@@ -187,12 +210,22 @@
                 labels: dates,
                 datasets: [
                     {
-                        label: 'Consommation',
+                        label: 'Consommation (L/100)',
                         data: consommations,
                         borderColor: 'rgb(220, 53, 69)',
                         backgroundColor: 'rgba(220, 53, 69, 0.1)',
                         tension: 0.1,
-                        fill: true
+                        fill: true,
+                        yAxisID: 'y' // Axe Y principal
+                    },
+                    {
+                        label: 'Prix (€)',
+                        data: prix,
+                        borderColor: 'rgb(13, 110, 253)', // Bleu Bootstrap
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        tension: 0.1,
+                        fill: false,
+                        yAxisID: 'y1' // Axe Y secondaire pour les prix
                     }
                 ]
             },
@@ -201,8 +234,22 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
                         beginAtZero: true,
-                        title: { display: true, text: 'Consommation' }
+                        title: { display: true, text: 'Consommation (L/100)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        title: { display: true, text: 'Prix (€)' },
+                        // Grille désactivée pour éviter de superposer les lignes de grille avec l'axe y principal
+                        grid: {
+                            drawOnChartArea: false,
+                        },
                     }
                 }
             }
