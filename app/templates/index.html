@@ -75,6 +75,58 @@
             </div>
         </div>
 
+        <!-- MODALE DE MODIFICATION D'UN RELEVÉ (une seule, pré-remplie en JS) -->
+        <div class="modal fade" id="editEntryModal" tabindex="-1" aria-labelledby="editEntryModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form id="editEntryForm" action="" method="POST">
+                        <!-- Date d'origine, pour retrouver l'entrée même si la date est modifiée -->
+                        <input type="hidden" name="original_date" id="editOriginalDate">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editEntryModalLabel">Modifier le relevé</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="editDate" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="editDate" name="date" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPlein" class="form-label">Volume (Litres)</label>
+                                <input type="number" step="0.01" class="form-control" id="editPlein" name="plein"
+                                    min="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCompteur" class="form-label">Kilométrage (km)</label>
+                                <input type="number" step="0.01" class="form-control" id="editCompteur" name="compteur"
+                                    min="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPrix" class="form-label">Prix (€)</label>
+                                <input type="number" step="0.001" class="form-control" id="editPrix" name="prix"
+                                    min="0.001">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCarburant" class="form-label">Type d'essence (facultatif)</label>
+                                <select class="form-select" id="editCarburant" name="carburant">
+                                    <option value="">Non renseigné</option>
+                                    {% for t in types_carburant %}
+                                    <option value="{{ t }}">{{ t }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Section Graphique -->
         {% if historique %}
         <div class="card p-3 p-md-4 shadow-sm mb-4">
@@ -168,11 +220,23 @@
                             <!-- n'affiche rien si le carburant n'est pas renseigné (ancienne entrée) -->
                             <td>{% if infos.carburant %}{{ infos.carburant }}{% endif %}</td>
                             <td class="text-end">
-                                <form action="{{ url_for('main.delete', vehicle=current_vehicle, date=date) }}"
-                                    method="POST" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2"
-                                        onclick="return confirm('Voulez-vous vraiment supprimer cette entrée ?');">X</button>
-                                </form>
+                                <div class="d-inline-flex gap-1">
+                                    <!-- Bouton Modifier : ouvre la modale pré-remplie -->
+                                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2"
+                                        data-bs-toggle="modal" data-bs-target="#editEntryModal"
+                                        data-edit-url="{{ url_for('main.edit', vehicle=current_vehicle, date=date) }}"
+                                        data-edit-date="{{ date }}" data-edit-plein="{{ infos.plein }}"
+                                        data-edit-compteur="{{ infos.compteur }}"
+                                        data-edit-prix="{{ infos.prix if infos.prix else '' }}"
+                                        data-edit-carburant="{{ infos.carburant if infos.carburant else '' }}">
+                                        ✎
+                                    </button>
+                                    <form action="{{ url_for('main.delete', vehicle=current_vehicle, date=date) }}"
+                                        method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2"
+                                            onclick="return confirm('Voulez-vous vraiment supprimer cette entrée ?');">X</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -265,6 +329,21 @@
         });
     </script>
     {% endif %}
+
+    <!-- Pré-remplissage de la modale de modification à partir du bouton cliqué -->
+    <script>
+        document.getElementById('editEntryModal').addEventListener('show.bs.modal', function (event) {
+            const bouton = event.relatedTarget;
+            const form = document.getElementById('editEntryForm');
+            form.action = bouton.dataset.editUrl;
+            document.getElementById('editOriginalDate').value = bouton.dataset.editDate;
+            document.getElementById('editDate').value = bouton.dataset.editDate;
+            document.getElementById('editPlein').value = bouton.dataset.editPlein;
+            document.getElementById('editCompteur').value = bouton.dataset.editCompteur;
+            document.getElementById('editPrix').value = bouton.dataset.editPrix;
+            document.getElementById('editCarburant').value = bouton.dataset.editCarburant;
+        });
+    </script>
 
     <script>
         document.getElementById('date').valueAsDate = new Date();

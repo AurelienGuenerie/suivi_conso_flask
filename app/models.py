@@ -57,6 +57,55 @@ def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: 
     
     print(f"Nouvelle date créée pour {vehicule} : {date}")  
       
+def modifier_ligne_dico(vehicule: str, ancienne_date: str, nouvelle_date: str, plein: float, compteur: float, prix: float | None, conso: float, carburant: str | None = None):
+    """ Modifie une entrée existante (identifiée par ancienne_date).
+    
+    Gère aussi le cas où la date est changée : l'entrée est renommée
+    en conservant sa position dans le dictionnaire.
+    """
+    if not os.path.exists(DB_PATH):
+        return
+    try:
+        with open(DB_PATH, 'r', encoding='utf-8') as file:
+            suivi = json.load(file)
+    except json.JSONDecodeError:
+        suivi = {}
+
+    if vehicule not in suivi or ancienne_date not in suivi[vehicule]:
+        print(f"Entrée introuvable : {vehicule} / {ancienne_date}")
+        return
+
+    # Nouvelles valeurs (la consommation est recalculée)
+    nouvelles_valeurs = {
+        'plein': plein,
+        'compteur': compteur,
+        'consommation': conso,
+        'prix': prix
+    }
+    
+    # Champ facultatif : le type de carburant n'est stocké que s'il est renseigné
+    if carburant:
+        nouvelles_valeurs['carburant'] = carburant
+
+    if ancienne_date == nouvelle_date:
+        # Simple mise à jour des valeurs
+        suivi[vehicule][nouvelle_date] = nouvelles_valeurs
+    else:
+        # Date modifiée : reconstruire le dictionnaire en conservant l'ordre
+        # (l'entrée déplacée garde sa position d'origine)
+        historique = {}
+        for d, valeurs in suivi[vehicule].items():
+            if d == ancienne_date:
+                historique[nouvelle_date] = nouvelles_valeurs
+            else:
+                historique[d] = valeurs
+        suivi[vehicule] = historique
+
+    with open(DB_PATH, 'w', encoding='utf-8') as file:
+        json.dump(suivi, file, indent=4, ensure_ascii=False)
+    
+    print(f"Entrée modifiée : {vehicule} / {ancienne_date} -> {nouvelle_date}")
+
 def recuperer_donnees():
     if not os.path.exists(DB_PATH):
             return {}

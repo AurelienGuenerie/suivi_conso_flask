@@ -60,6 +60,26 @@ def index(vehicle):
         types_carburant=TYPES_CARBURANT
     )
 
+@main_bp.route('/edit/<vehicle>/<date>', methods=['POST'])
+def edit(vehicle, date):
+    ancienne_date = request.form.get('original_date', date)
+    nouvelle_date = request.form.get('date')
+    plein = float(request.form.get('plein', 0))
+    compteur = float(request.form.get('compteur', 0))
+    prix_str = request.form.get('prix')
+    prix = float(prix_str) if prix_str else None
+    
+    # Champ facultatif : type de carburant (vide ou inconnu => None, non stocké)
+    carburant = request.form.get('carburant')
+    if carburant not in TYPES_CARBURANT:
+        carburant = None
+    
+    conso = calculer_conso(plein, compteur)
+    
+    modifier_ligne_dico(vehicle, ancienne_date, nouvelle_date, plein, compteur, prix, conso, carburant)
+    
+    return redirect(url_for('main.index', vehicle=vehicle))
+
 @main_bp.route('/delete/<vehicle>/<date>', methods=['POST'])
 def delete(vehicle, date):
     supprimer_ligne_dico(vehicle, date)
