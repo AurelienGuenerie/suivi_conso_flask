@@ -3,6 +3,9 @@ from app.models import *
 
 main_bp = Blueprint('main', __name__)
 
+# Types de carburant autorisés (None / absent = non renseigné)
+TYPES_CARBURANT = ['SP95', 'SP98', 'E10', 'B7', 'B10']
+
 @main_bp.route('/', defaults={'vehicle': None}, methods=['GET', 'POST'])
 @main_bp.route('/<vehicle>', methods=['GET', 'POST'])
 def index(vehicle):
@@ -33,10 +36,15 @@ def index(vehicle):
         prix_str = request.form.get('prix')
         prix = float(prix_str) if prix_str else None
         
+        # Champ facultatif : type de carburant (vide ou inconnu => None, non stocké)
+        carburant = request.form.get('carburant')
+        if carburant not in TYPES_CARBURANT:
+            carburant = None
+        
         conso = calculer_conso(plein, compteur)
 
         # Enregistrement en précisant le véhicule dans vos models
-        ajouter_ligne_dico(active_vehicle, date, plein, compteur, prix, conso)
+        ajouter_ligne_dico(active_vehicle, date, plein, compteur, prix, conso, carburant)
         
         return redirect(url_for('main.index', vehicle=active_vehicle))
 
@@ -48,7 +56,8 @@ def index(vehicle):
         title="Suivi Consommation", 
         historique=historique,
         list_vehicles=list_vehicles,
-        current_vehicle=current_vehicle
+        current_vehicle=current_vehicle,
+        types_carburant=TYPES_CARBURANT
     )
 
 @main_bp.route('/delete/<vehicle>/<date>', methods=['POST'])

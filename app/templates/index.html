@@ -110,6 +110,15 @@
                     <label for="prix" class="form-label">Prix (€)</label>
                     <input type="number" step="0.001" class="form-control" id="prix" name="prix" min="0.001">
                 </div>
+                <div class="mb-3">
+                    <label for="carburant" class="form-label">Type d'essence (facultatif)</label>
+                    <select class="form-select" id="carburant" name="carburant">
+                        <option value="">Non renseigné</option>
+                        {% for t in types_carburant %}
+                        <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-primary w-100 py-2">Enregistrer pour {{ current_vehicle }}</button>
             </form>
         </div>
@@ -128,6 +137,7 @@
                             <th>Km</th>
                             <th>Conso</th>
                             <th>Prix</th>
+                            <th>Carburant</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -155,6 +165,8 @@
                             <td>{{ infos.consommation }}</td>
                             <!-- n'affiche rien si l'utilisateur n'a rien rentré -->
                             <td>{% if infos.prix %}{{ infos.prix }} €{% endif %}</td>
+                            <!-- n'affiche rien si le carburant n'est pas renseigné (ancienne entrée) -->
+                            <td>{% if infos.carburant %}{{ infos.carburant }}{% endif %}</td>
                             <td class="text-end">
                                 <form action="{{ url_for('main.delete', vehicle=current_vehicle, date=date) }}"
                                     method="POST" style="display:inline;">
@@ -181,6 +193,7 @@
                                 {{ "%.3f"|format(ns.total_prix / ns.count_prix) }} €
                                 {% else %}-{% endif %}
                             </td>
+                            <td></td>
                             <td></td>
                         </tr>
                     </tfoot>

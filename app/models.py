@@ -21,7 +21,7 @@ def calculer_conso(plein: float, compteur: float):
     return conso
 
 
-def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: float, prix: float | None, conso: float):
+def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: float, prix: float | None, conso: float, carburant: str | None = None):
     # S'assurer que le dossier data existe
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     
@@ -45,6 +45,11 @@ def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: 
         'consommation': conso,
         'prix': prix
     }
+    
+    # Champ facultatif : le type de carburant n'est stocké que s'il est renseigné
+    # (les anciennes entrées du JSON, sans cette clé, restent valides)
+    if carburant:
+        suivi[vehicule][date]['carburant'] = carburant
 
     # Sauvegarder dans le fichier
     with open(DB_PATH, 'w', encoding='utf-8') as file:
