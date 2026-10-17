@@ -245,11 +245,11 @@
                         <tr class="fw-bold table-light">
                             <td>Totaux</td>
                             <td>{{ "%.2f"|format(ns.total_plein) }} L</td>
-                            <td>{{ "%.2f"|format(ns.total_compteur) }}</td>
+                            <td>{{ "%.1f"|format(ns.total_compteur) }}</td>
                             <td>
                                 <!--Calcul conso moyenne-->
                                 {% if ns.count_conso > 0 %}
-                                {{ "%.3f"|format(ns.total_plein / ns.total_compteur*100) }}
+                                {{ "%.1f"|format(ns.total_plein / ns.total_compteur*100) }}
                                 {% else %}-{% endif %}
                             </td>
                             <td>
