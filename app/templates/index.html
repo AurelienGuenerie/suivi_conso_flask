@@ -221,7 +221,8 @@
                             <!-- n'affiche rien si l'utilisateur n'a rien rentré -->
                             <td>{% if infos.prix %}{{ infos.prix }} €{% endif %}</td>
                             <!-- coût = volume x prix, calculé à l'affichage (rien si le prix est absent) -->
-                            <td>{% if infos.prix %}{{ "%.2f"|format(infos.plein | float * infos.prix | float) }} €{% endif %}</td>
+                            <td>{% if infos.prix %}{{ "%.2f"|format(infos.plein | float * infos.prix | float) }} €{%
+                                endif %}</td>
                             <!-- n'affiche rien si le carburant n'est pas renseigné (ancienne entrée) -->
                             <td>{% if infos.carburant %}{{ infos.carburant }}{% endif %}</td>
                             <td class="text-end">
@@ -254,7 +255,7 @@
                             <td>
                                 <!--Calcul conso moyenne-->
                                 {% if ns.count_conso > 0 %}
-                                {{ "%.1f"|format(ns.total_plein / ns.total_compteur*100) }} L/100
+                                {{ "%.2f"|format(ns.total_plein / ns.total_compteur*100) }} L/100
                                 {% else %}-{% endif %}
                             </td>
                             <td>
@@ -322,7 +323,7 @@
                             <td>{{ "%.1f"|format(nb.km) }}</td>
                             <td>
                                 {% if nb.km > 0 %}
-                                {{ "%.1f"|format(nb.vol / nb.km * 100) }} L/100
+                                {{ "%.2f"|format(nb.vol / nb.km * 100) }} L/100
                                 {% else %}-{% endif %}
                             </td>
                             <td>
