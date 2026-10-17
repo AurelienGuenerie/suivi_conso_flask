@@ -58,10 +58,10 @@ def ajouter_ligne_dico(vehicule: str, date: str | None, plein: float, compteur: 
     print(f"Nouvelle date créée pour {vehicule} : {date}")  
       
 def modifier_ligne_dico(vehicule: str, ancienne_date: str, nouvelle_date: str, plein: float, compteur: float, prix: float | None, conso: float, carburant: str | None = None):
-    """ Modifie une entrée existante (identifiée par ancienne_date).
+    """ Modifie une entrée existante (identifiée par sa date dans le JSON).
     
-    Gère aussi le cas où la date est changée : l'entrée est renommée
-    en conservant sa position dans le dictionnaire.
+    L'ordre dans le fichier n'a pas d'importance : l'affichage est trié
+    chronologiquement (voir routes.py).
     """
     if not os.path.exists(DB_PATH):
         return
@@ -75,8 +75,13 @@ def modifier_ligne_dico(vehicule: str, ancienne_date: str, nouvelle_date: str, p
         print(f"Entrée introuvable : {vehicule} / {ancienne_date}")
         return
 
-    # Nouvelles valeurs (la consommation est recalculée)
-    nouvelles_valeurs = {
+    # Si la date a changé, on supprime l'ancienne clé
+    # (c'est elle qui identifie l'entrée dans le JSON)
+    if ancienne_date != nouvelle_date:
+        del suivi[vehicule][ancienne_date]
+
+    # Écriture des nouvelles valeurs (la consommation est recalculée)
+    suivi[vehicule][nouvelle_date] = {
         'plein': plein,
         'compteur': compteur,
         'consommation': conso,
@@ -85,21 +90,7 @@ def modifier_ligne_dico(vehicule: str, ancienne_date: str, nouvelle_date: str, p
     
     # Champ facultatif : le type de carburant n'est stocké que s'il est renseigné
     if carburant:
-        nouvelles_valeurs['carburant'] = carburant
-
-    if ancienne_date == nouvelle_date:
-        # Simple mise à jour des valeurs
-        suivi[vehicule][nouvelle_date] = nouvelles_valeurs
-    else:
-        # Date modifiée : reconstruire le dictionnaire en conservant l'ordre
-        # (l'entrée déplacée garde sa position d'origine)
-        historique = {}
-        for d, valeurs in suivi[vehicule].items():
-            if d == ancienne_date:
-                historique[nouvelle_date] = nouvelles_valeurs
-            else:
-                historique[d] = valeurs
-        suivi[vehicule] = historique
+        suivi[vehicule][nouvelle_date]['carburant'] = carburant
 
     with open(DB_PATH, 'w', encoding='utf-8') as file:
         json.dump(suivi, file, indent=4, ensure_ascii=False)

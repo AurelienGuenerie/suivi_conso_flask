@@ -49,7 +49,11 @@ def index(vehicle):
         return redirect(url_for('main.index', vehicle=active_vehicle))
 
     # 3. Récupération de l'historique propre au véhicule actif (GET)
-    historique = toutes_les_donnees.get(current_vehicle, {})
+    # Tri chronologique : les dates "YYYY-MM-DD" se trient comme du texte.
+    # Le dictionnaire est trié du plus ancien au plus récent (utile pour le graphique),
+    # le tableau affiche ensuite l'ordre inverse (le plus récent en haut).
+    historique_brut = toutes_les_donnees.get(current_vehicle, {})
+    historique = dict(sorted(historique_brut.items()))
     
     return render_template(
         'index.html', 
